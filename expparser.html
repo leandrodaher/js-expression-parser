@@ -1,0 +1,291 @@
+<script>
+    /*
+    * Adaptação para JavaScript por Leandro Daher
+    * https://raw.githubusercontent.com/leandrodaher/js-expression-parser
+    *
+    * REFERÊNCIAS DO CÓDIGO
+    *
+    * Let's Build a Compiler, by Jack Crenshaw
+    * https://compilers.iecc.com/crenshaw/
+    *
+    * Let's Build a Compiler, by Jack Crenshaw - Tradução e adaptação em C : Felipo Soranz
+    * http://tutorialcompiladores.pbworks.com/w/page/22541623/FrontPage
+    *
+    */
+
+    /*
+     * *************************************************************************************
+     * VARIÁVEIS GLOBAIS 
+     * *************************************************************************************
+    */
+        
+    tokenList = [];
+    </script>
+    
+    <script>
+    /*
+     * *************************************************************************************
+     * ANALIZADOR LÉXICO 
+     * *************************************************************************************
+    */
+    
+    //code = "a=10 b=7 \n e=10+35*(5-2)*9/2"
+    code = prompt("Digite uma expressão matemática", "( 10 + 1.56 * (5.3 + 2.07) ) / 2");
+    look = '&';
+    line = 1;
+    cpos = 0;
+    token = "token";
+    
+    function nextChar(c) {
+        look = code.charAt(cpos);
+        cpos++;
+    }
+    
+    function isAlpha(c) {
+        return (look >= 'A' && look <= 'Z');
+    }
+    
+    function isDigit(c) {
+        return (look >= '0' && look <= '9');
+    }
+    
+    /* main */
+    
+    console.log("Entrada: " + code);
+    code = code.toUpperCase();
+    nextChar(); // lê o primeiro caracter (look)
+    
+    while (cpos <= code.length) {
+        
+        if (look == ' ' | look == '\t') {
+            nextChar();
+            while (look == ' ' | look == '\t') {
+                nextChar();
+            }
+            
+        } else if (look == '\n') {
+            line++;
+            nextChar();
+            
+        } else if (isAlpha(look)) { // se é um identificador (palavra)
+            token = look;
+            nextChar();
+            while (isAlpha(look)) {
+                token = token + look;
+                nextChar();
+            }
+            tokenList.push(token); // console.log(token);
+            
+        } else if (isDigit(look)) { // se é um número
+            var existePonto = false;
+            token = look;
+            nextChar();
+            while (isDigit(look) | (look == '.')) {
+                if (look == '.') { // se encontrou um ponto entre os numeros
+                    if (existePonto) { // se o número tem mais de um ponto
+                        throw new Error(line+":"+cpos+" formato de numero invalido. O formato correto deve ser 99.99");
+                    } else {
+                        existePonto = true;
+                    }
+                } 
+                token = token + look;
+                nextChar();
+            }
+            tokenList.push(token); // console.log(token);
+            
+        } else { // se não for palavra ou número, então é um símbolo ou um caractere qualquer
+            switch(look) {
+                case '+':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case '-':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case '*':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case '/':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case '=':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case '(':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                case ')':
+                    token = look;
+                    tokenList.push(token); // console.log(token);
+                    nextChar();
+                    break;
+                default:
+                    throw new Error(line+":"+cpos+" caracter \'"+look+"\' invalido");
+            }
+        } /* fim simbolos */
+        
+    }
+    
+    console.log("Total de Linhas: " + line + "\nTotal de caracteres: " + (cpos-1));
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <script>
+    /*
+     * *************************************************************************************
+     * INTERPRETADOR DE EXPRESSÕES
+     *
+     * ------------ Histórico --------------
+     * Apesar do analizador léxico conseguir reconhecer palavras, está versão não utiliza-rá
+     * disso para interpretar variáveis. O interpretador apenas fará contas simpels do tipo:
+     * (10+1.56*(5.3+2.07))/2
+     * -------------------------------------
+     * *************************************************************************************
+    */
+        
+    look = '&';
+    tkPos = 0; //posição do token
+    init();
+    
+    /* inicialização do interpretador */
+    function init() {
+        nextToken();
+        var resultado = expressao();
+        console.log("Resultado: \n" + code + " = " + resultado);
+        alert("Resultado: \n" + code + " = " + resultado, 0);
+    }
+    
+    /* lê o proximo token */
+    function nextToken() {
+        
+        if (tkPos > tokenList.length) {
+            console.log("Sem tokens");
+        } else {
+            look = tokenList[tkPos];
+            tkPos++;
+        }
+        
+    }
+    
+    /* verifica se entrada combina com o esperado */
+    function match(c)
+    {
+        if (look != c)
+            throw new Error(c);
+        nextToken();
+    }
+    
+    /* verifica se é um numero */
+    function digito(n) {
+        var nn = look.charAt(0);
+        return (nn >= "0" && nn <= "9");
+    }
+        
+    /* recebe um número inteiro ou decimal */
+    function getNum() {
+        var i;
+    
+        i = 0;
+    
+        if (!digito(look))
+            throw new Error("Integer");
+    
+        i = parseFloat(look); // converte string para float
+        nextToken();
+    
+        return i;
+    }
+        
+    /* reconhece operador aditivo */
+    function isAddOp(c) {
+        return (c == '+' || c == '-');
+    }
+    
+    /* reconhece operador multiplicativo */
+    function isMulOp(c) {
+        return (c == '*' || c == '/');
+    }
+        
+    /* avalia um fator */
+    function fator() {
+    
+        var val;
+    
+        if (look == '(') {
+            match('(');
+            val = expressao();
+            match(')');
+        } else{
+            val = getNum();
+            //console.log("fator "+val);
+        }
+    
+        return val;
+    }
+    
+    /* avalia um termo */
+    function termo() {
+        var val;
+    
+        val = fator();
+        while (isMulOp(look)) {
+            switch (look) {
+                case '*':
+                    match('*');
+                    val *= fator();
+                    break;
+                case '/':
+                    match('/');
+                    val /= fator();
+                    break;
+            }
+        }
+    
+        return val;
+    }
+    
+    /* calcula uma expressão */
+    function expressao() {
+    
+        var val;
+    
+        if (isAddOp(look))
+            val = 0;
+        else
+            val = termo();
+    
+        while (isAddOp(look)) {
+            switch (look) {
+                case '+':
+                    match('+');
+                    val += termo();
+                    break;
+                case '-':
+                    match('-');
+                    val -= termo();
+                    break;
+            }
+        }
+    
+        return val;
+    }
+    </script>
